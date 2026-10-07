@@ -10,22 +10,24 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Kết nối MongoDB
+// Hàm kết nối MongoDB hỗ trợ Serverless (Vercel)
 const connectDB = async () => {
-  const mongoUri = process.env.MONGODB_URI;
-  if (!mongoUri) {
-    console.warn('⚠️ Cảnh báo: Biến môi trường MONGODB_URI chưa được thiết lập!');
+  if (mongoose.connection.readyState === 1) {
     return;
   }
-  try {
-    await mongoose.connect(mongoUri);
-    console.log('✅ Đã kết nối thành công tới MongoDB Atlas!');
-  } catch (error) {
-    console.error('❌ Lỗi kết nối MongoDB:', error.message);
+  const mongoUri = process.env.MONGODB_URI;
+  if (!mongoUri) {
+    throw new Error('Biến môi trường MONGODB_URI chưa được thiết lập!');
   }
+  await mongoose.connect(mongoUri, {
+    serverSelectionTimeoutMS: 8000,
+  });
 };
 
-connectDB();
+// Gọi kết nối ban đầu
+connectDB().catch((err) => {
+  console.error('Lỗi kết nối khởi tạo MongoDB:', err.message);
+});
 
 // Route trang chủ
 app.get('/', (req, res) => {
@@ -37,9 +39,20 @@ app.get('/', (req, res) => {
   });
 });
 
-// Route kiểm tra sức khỏe hệ thống (Health Check cho DevOps 2 nghiệm thu)
-app.get('/api/health', (req, res) => {
-  const isMongoConnected = mongoose.connection.readyState === 1;
+// Route kiểm tra sức khỏe hệ thống (Health Check)
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  let dbMessage = '';
+
+  try {
+    await connectDB();
+    dbStatus = 'connected';
+    dbMessage = 'MongoDB kết nối thành công';
+  } catch (error) {
+    dbStatus = 'error';
+    dbMessage = error.message;
+  }
+
   const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY);
 
   res.json({
@@ -51,9 +64,9 @@ app.get('/api/health', (req, res) => {
       hasGeminiKey: hasGeminiKey
     },
     database: {
-      status: isMongoConnected ? 'connected' : 'disconnected',
+      status: dbStatus,
       readyState: mongoose.connection.readyState,
-      message: isMongoConnected ? 'MongoDB kết nối thành công' : 'Chưa kết nối được MongoDB'
+      message: dbMessage
     },
     gemini: {
       status: hasGeminiKey ? 'ready' : 'missing_key',
