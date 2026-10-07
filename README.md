@@ -67,3 +67,4 @@ npm run dev
   4. **Start Command**: `npm start`.
   5. Thêm các biến `MONGODB_URI`, `GEMINI_API_KEY` vào mục **Environment** trên Render.
   6. Bấm **Deploy**.
+# quan-ly-tuyen-sinh-agu
