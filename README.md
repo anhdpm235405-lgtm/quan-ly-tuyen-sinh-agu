@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎓 Dự Án Quản Lý Tuyển Sinh / Tài Sản AGU (QLTS AGU)
 
-## Getting Started
+Dự án được khởi tạo và cấu hình bởi bộ phận **DevOps** (DevOps 1 & DevOps 2).
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 📁 Cấu trúc thư mục (Monorepo)
+
+```text
+QLTSAGU/
+├── backend/                  # Mã nguồn Backend (Node.js, Express, Mongoose, Gemini SDK)
+│   ├── server.js             # File máy chủ chính & API Health Check
+│   ├── .env.example          # Mẫu biến môi trường cho Backend
+│   ├── .env                  # Biến môi trường thật (đã được gitignore)
+│   └── package.json
+│
+├── frontend/                 # Mã nguồn Frontend (Next.js App Router, React 19)
+│   ├── src/                  # Mã nguồn giao diện & API routes
+│   │   ├── app/              # Trang chủ & Route handlers (/api/health)
+│   │   └── lib/              # Helpers kết nối MongoDB & Google Gemini
+│   ├── .env.example          # Mẫu biến môi trường cho Frontend
+│   ├── .env.local            # Biến môi trường thật (đã được gitignore)
+│   └── package.json
+│
+├── .gitignore                # Chặn rò rỉ file .env và node_modules lên GitHub
+└── README.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## ⚙️ Hướng dẫn cài đặt & Chạy cục bộ (Local)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Cấu hình biến môi trường (.env)
+* Trong thư mục `backend/`: Sao chép file `.env.example` thành `.env` rồi điền `MONGODB_URI` và `GEMINI_API_KEY`.
+* Trong thư mục `frontend/`: Sao chép file `.env.example` thành `.env.local` rồi điền các biến tương tự.
 
-## Learn More
+### 2. Chạy Backend (Cổng 5000)
+```bash
+cd backend
+npm install
+npm run dev
+# Mở trình duyệt: http://localhost:5000 (Kiểm tra health: http://localhost:5000/api/health)
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Chạy Frontend (Cổng 3000)
+```bash
+cd frontend
+npm install
+npm run dev
+# Mở trình duyệt: http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ☁️ Hướng dẫn Deploy cho DevOps 2
 
-## Deploy on Vercel
+* **Deploy Frontend lên Vercel**:
+  1. Kết nối repo GitHub với Vercel.
+  2. Chọn Root Directory là `frontend`.
+  3. Thêm các biến môi trường từ `frontend/.env.example` vào mục **Environment Variables** trên Vercel.
+  4. Bấm **Deploy**.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+* **Deploy Backend lên Render**:
+  1. Chọn **New Web Service** trên Render kết nối với repo GitHub.
+  2. Cấu hình **Root Directory**: `backend`.
+  3. **Build Command**: `npm install`.
+  4. **Start Command**: `npm start`.
+  5. Thêm các biến `MONGODB_URI`, `GEMINI_API_KEY` vào mục **Environment** trên Render.
+  6. Bấm **Deploy**.
