@@ -1,3 +1,4 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -11,8 +12,13 @@ const chatbotRoutes = require('./routes/chatbotRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// === Middleware ===
-// Cấu hình CORS rõ ràng cho phép Frontend truy cập
+// Danh sách Frontend được phép truy cập
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://quan-ly-tuyen-sinh-agu-omega.vercel.app'
+];
+
+// Middleware
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -27,32 +33,37 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// === Đăng ký đường dẫn API ===
-app.use('/api/auth', authRoutes);        // Xác thực & phân quyền
-app.use('/api/ho-so', hoSoRoutes);        // Quản lý hồ sơ tuyển sinh
-app.use('/api/chatbot', chatbotRoutes);   // Chatbot hỗ trợ
+app.use(express.json());
 
-// === Kết nối MongoDB ===
+// Đăng ký API
+app.use('/api/auth', authRoutes);
+app.use('/api/ho-so', hoSoRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+
+// Kết nối MongoDB
 const connectDB = async () => {
   if (mongoose.connection.readyState === 1) {
     return;
   }
+
   const mongoUri = process.env.MONGODB_URI;
+
   if (!mongoUri) {
     throw new Error('Biến môi trường MONGODB_URI chưa được thiết lập!');
   }
+
   await mongoose.connect(mongoUri, {
     serverSelectionTimeoutMS: 8000,
   });
+
   console.log('✅ Kết nối CSDL MongoDB thành công');
 };
 
-// Kết nối ngay khi khởi động server
 connectDB().catch((err) => {
   console.error('❌ Lỗi kết nối MongoDB:', err.message);
 });
 
-// === Trang chủ Backend ===
+// Trang chủ Backend
 app.get('/', (req, res) => {
   res.json({
     project: 'QLTS AGU — Hệ thống Quản Lý Tuyển Sinh',
@@ -62,10 +73,11 @@ app.get('/', (req, res) => {
   });
 });
 
-// === Kiểm tra trạng thái hệ thống ===
+// Kiểm tra trạng thái hệ thống
 app.get('/api/health', async (req, res) => {
   let dbStatus = 'disconnected';
   let dbMessage = '';
+
   try {
     await connectDB();
     dbStatus = 'connected';
@@ -76,13 +88,14 @@ app.get('/api/health', async (req, res) => {
   }
 
   const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY);
+
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: {
       port: PORT,
       hasMongoUri: Boolean(process.env.MONGODB_URI),
-      hasGeminiKey: hasGeminiKey
+      hasGeminiKey
     },
     database: {
       status: dbStatus,
@@ -91,12 +104,14 @@ app.get('/api/health', async (req, res) => {
     },
     gemini: {
       status: hasGeminiKey ? 'ready' : 'missing_key',
-      message: hasGeminiKey ? 'Gemini API Key đã sẵn sàng' : 'Chưa cấu hình GEMINI_API_KEY'
+      message: hasGeminiKey
+        ? 'Gemini API Key đã sẵn sàng'
+        : 'Chưa cấu hình GEMINI_API_KEY'
     }
   });
 });
 
-// === Khởi động server ===
+// Khởi động server
 app.listen(PORT, () => {
   console.log(`🚀 Backend Server đang chạy tại cổng ${PORT}`);
   console.log(`📍 Truy cập: http://localhost:${PORT}`);
