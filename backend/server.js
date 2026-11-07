@@ -14,10 +14,18 @@ const PORT = process.env.PORT || 5000;
 // === Middleware ===
 // Cấu hình CORS rõ ràng cho phép Frontend truy cập
 app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log('CORS blocked origin:', origin);
+    return callback(new Error('Origin not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json());
 
 // === Đăng ký đường dẫn API ===
 app.use('/api/auth', authRoutes);        // Xác thực & phân quyền
